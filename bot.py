@@ -1,8 +1,11 @@
 import os
 import telebot 
-from telebot import types
+from telebot.types import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 from dotenv import load_dotenv
 from dateutil import parser
+from timezonefinder import TimezoneFinder
+import pytz
+
 
 load_dotenv()
 user_data = {}
@@ -12,6 +15,22 @@ bot = telebot.TeleBot(BOT_TOKEN)
 @bot.message_handler(commands=['start'])
 def start_command(message):
     bot.reply_to(message, 'Hello! I am Pillbot 💊')
+
+@bot.message_handler(commands=['timezone'])
+def send_welcome(message):
+    location_button = KeyboardButton("Share Location to set timezone", request_location=True)
+    markup = ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    markup.add(location_button)
+    markup.add(KeyboardButton("Select timezone manually"))
+    bot.send_message(message.chat.id, "Please share your location to set your time zone.", reply_markup=markup)
+
+@bot.message_handler(content_types=['location'])
+def handle_location(message):
+    latitude = message.location.latitude
+    longitude = message.location.longitude
+    tf = TimezoneFinder()
+    timezone_str = tf.timezone_at(lat=latitude, lng=longitude)
+    bot.send_message(message.chat.id, f"Time zone set to {timezone_str}", reply_markup=ReplyKeyboardRemove())
 
 @bot.message_handler(commands=['help'])
 def help_command(message):
@@ -23,6 +42,7 @@ def help_command(message):
 /list - View your reminders
 /delete - Remove a reminder
 /help - Show this message 
+/timezone - Add Users Timezone
 """
     bot.reply_to(message, help_text, parse_mode="Markdown") 
 
@@ -41,12 +61,10 @@ def dosage_handler(message):
 
 def frequency_handler(message):
     user_data[message.chat.id]['dosage'] = message.text  # Store dosage
-
-    markup = types.InlineKeyboardMarkup()
-    button_daily = types.InlineKeyboardButton('Daily', callback_data='daily')
-    button_weekly = types.InlineKeyboardButton('Choose day', callback_data='weekly')
+    markup = InlineKeyboardMarkup()
+    button_daily = InlineKeyboardButton('Daily', callback_data='daily')
+    button_weekly = InlineKeyboardButton('Choose day', callback_data='weekly')
     markup.add(button_daily, button_weekly)
-    sent_msg = bot.send_message(message.chat.id, "When do you want to take this medication?", reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: call.data in ['daily', 'weekly'])
 def handle_frequency_selection(call):
@@ -109,9 +127,9 @@ def confirm_handler(message):
     bot.send_message(message.chat.id, "Here's your Medication info:")
     bot.send_message(message.chat.id, medication_data_message, parse_mode="Markdown")
     
-    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-    button_yes = types.KeyboardButton("Yes")
-    button_no = types.KeyboardButton("No")
+    markup = ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+    button_yes = KeyboardButton("Yes")
+    button_no = KeyboardButton("No")
     markup.add(button_yes, button_no)
 
     sent_msg= bot.send_message(message.chat.id, "Please confirm:", reply_markup=markup)
