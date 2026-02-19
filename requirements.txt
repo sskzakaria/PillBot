@@ -1,0 +1,8 @@
+#Core
+pyTelegramBotAPI==4.30.0
+python-dotenv==1.2.1
+
+#Timezone
+pytz==2025.2
+timezonefinder==8.2.0
+python-dateutil==2.9.0.post0
