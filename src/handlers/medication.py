@@ -28,11 +28,11 @@ def handle_frequency_selection(call):
     bot.answer_callback_query(call.id)
     user_data[call.message.chat.id]['frequency'] = call.data  # Store frequency 
     if call.data == 'daily':
-        bot.send_message(call.message.chat.id, "What time do you want to take this medication?")
-        bot.register_next_step_handler(call.message, time_handler)
+        sent_msg=bot.send_message(call.message.chat.id, "What time do you want to take this medication?")
+        bot.register_next_step_handler(sent_msg, time_handler)
     if call.data == 'weekly':
-        bot.send_message(call.message.chat.id, "On which day of the week would you like to take this medication?")
-        bot.register_next_step_handler(call.message, day_handler)
+        sent_msg=bot.send_message(call.message.chat.id, "On which day of the week would you like to take this medication?")
+        bot.register_next_step_handler(sent_msg, day_handler)
 
 def day_handler(message):
     day = message.text.strip().capitalize()
@@ -84,7 +84,7 @@ def confirm_handler(message):
     bot.send_message(message.chat.id, medication_data_message, parse_mode="Markdown")
     
 
-    markup = make_confirm_keyboard
+    markup = make_confirm_keyboard()
     sent_msg= bot.send_message(message.chat.id, "Please confirm:", reply_markup=markup)
     bot.register_next_step_handler(sent_msg, finalize_handler)
 
