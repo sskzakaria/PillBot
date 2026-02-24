@@ -3,6 +3,8 @@ from timezonefinder import TimezoneFinder
 from src.app import bot
 from telebot.types import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from src.utils.keyboards import make_timezone_keyboard
+from src.database.repository import create_or_update_user
+
 
 @bot.message_handler(commands=['timezone'])
 def send_welcome(message):
@@ -15,4 +17,5 @@ def handle_location(message):
     longitude = message.location.longitude
     tf = TimezoneFinder()
     timezone_str = tf.timezone_at(lat=latitude, lng=longitude)
+    create_or_update_user(message.chat.id,timezone_str)
     bot.send_message(message.chat.id, f"Time zone set to {timezone_str}", reply_markup=ReplyKeyboardRemove())   

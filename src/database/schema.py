@@ -4,11 +4,11 @@ from datetime import datetime
 from pathlib import Path
 
 
-db_path = Path(__file__).parent.parent / 'data' / 'bot.db'
+DB_PATH = Path(__file__).parent.parent / 'data' / 'bot.db'
 
 def init_database():
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(db_path)
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
 
     # Users table - stores per-user settings
@@ -67,7 +67,7 @@ def init_database():
     
     conn.commit()
     conn.close()
-    print(f"Database setup at {db_path}")
+    print(f"Database setup at {DB_PATH}")
 
 if __name__=='__main__':
     init_database()

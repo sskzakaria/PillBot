@@ -1,7 +1,7 @@
 from functools import wraps
-from database.repository import ensure_user_exists
-from database.repository import get_user_timezone
-from keyboards import make_timezone_keyboard
+from src.database.repository import user_exists
+from src.database.repository import get_user_timezone
+from src.utils.keyboards import make_timezone_keyboard
 from src.app import bot
 
 def with_user(func):
@@ -9,9 +9,9 @@ def with_user(func):
     @wraps(func)
     def wrapper(message, *args, **kwargs):
         user_id = message.chat.id
-        ensure_user_exists(user_id)
+        user_exists(user_id)
         return func(message, *args, **kwargs)
-    return wrapper
+    return wrapper  
 
 
 def with_timezone(func):
@@ -19,7 +19,7 @@ def with_timezone(func):
     @wraps(func)
     def wrapper(message, *args, **kwargs):
         user_id = message.chat.id
-        timezone= get_user_timezone
+        timezone= get_user_timezone(user_id)
         if not timezone:
             markup = make_timezone_keyboard()
             bot.send_message(

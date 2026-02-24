@@ -1,7 +1,7 @@
 import os 
 from telebot import TeleBot
 from src.handlers import(
-    start, timezone, medication, reminders, history
+    start, timezone, medication, reminders, stats , list
 )
 from src.app import bot
 
