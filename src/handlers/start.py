@@ -12,8 +12,7 @@ def help_command(message):
     *Commands:*
     /addpill - Add a medication reminder
     /list - View your reminders
-    /delete - Remove a reminder
     /help - Show this message 
     /timezone - Add Users Timezone
     """
-    bot.reply_to(message, help_text, parse_mode="Markdown") 
+    bot.reply_to(message, help_text, parse_mode="Markdown")  

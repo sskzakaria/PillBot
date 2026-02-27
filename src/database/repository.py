@@ -7,10 +7,9 @@ from typing import Optional, List, Dict
 from src.database.schema import DB_PATH
 
 
-# ==================== USER OPERATIONS ====================
 
 def create_or_update_user(user_id: int, timezone: str) -> None:
-    '''Save or update user timezone'''
+    """Save or update user timezone"""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('''
@@ -25,7 +24,7 @@ def create_or_update_user(user_id: int, timezone: str) -> None:
 
 
 def get_user_timezone(user_id: int) -> Optional[str]:
-    '''Get user's timezone, returns None if user doesn't exist'''
+    """Get user's timezone, returns None if user doesn't exist"""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('SELECT timezone FROM users WHERE user_id = ?', (user_id,))
@@ -35,7 +34,7 @@ def get_user_timezone(user_id: int) -> Optional[str]:
 
 
 def user_exists(user_id: int) -> bool:
-    '''Check if user exists in database'''
+    """Check if user exists in database"""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute('SELECT 1 FROM users WHERE user_id = ?', (user_id,))
@@ -44,7 +43,6 @@ def user_exists(user_id: int) -> bool:
     return result is not None
 
 
-# ==================== MEDICATION OPERATIONS ====================
 
 def create_medication(
     user_id: int,
@@ -54,11 +52,10 @@ def create_medication(
     times: List[str],
     days: Optional[List[str]] = None
 ) -> int:
-    '''Create new medication, returns medication ID'''
+    """Create new medication, returns medication ID"""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     
-    # Convert lists to JSON
     times_json = json.dumps(times)
     days_json = json.dumps(days) if days else None
     
@@ -69,7 +66,6 @@ def create_medication(
     ''', (user_id, name, dosage, frequency, times_json, days_json))
     
     medication_id = c.lastrowid
-    
     conn.commit()
     conn.close()
     
@@ -77,7 +73,7 @@ def create_medication(
 
 
 def get_user_medications(user_id: int, active_only: bool = True) -> List[Dict]:
-    '''Get all medications for a user'''
+    """Get all medications for a user"""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
@@ -100,7 +96,6 @@ def get_user_medications(user_id: int, active_only: bool = True) -> List[Dict]:
     rows = c.fetchall()
     conn.close()
     
-    # Convert to list of dicts and parse JSON
     medications = []
     for row in rows:
         med = dict(row)
@@ -112,7 +107,7 @@ def get_user_medications(user_id: int, active_only: bool = True) -> List[Dict]:
 
 
 def get_medication_by_id(medication_id: int) -> Optional[Dict]:
-    '''Get single medication by ID'''
+    """Get single medication by ID"""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     c = conn.cursor()
@@ -143,7 +138,7 @@ def update_medication(
     times: Optional[List[str]] = None,
     days: Optional[List[str]] = None
 ) -> None:
-    '''Update medication fields'''
+    """Update medication fields"""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     
@@ -179,22 +174,18 @@ def update_medication(
 
 
 def deactivate_medication(medication_id: int) -> None:
-    '''Soft delete - set active to False'''
+    """Soft delete - set active to False"""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     
-    c.execute('''
-        UPDATE medications 
-        SET active = 0 
-        WHERE id = ?
-    ''', (medication_id,))
+    c.execute('UPDATE medications SET active = 0 WHERE id = ?', (medication_id,))
     
     conn.commit()
     conn.close()
 
 
 def get_medication_count(user_id: int) -> int:
-    '''Get count of active medications for user'''
+    """Get count of active medications for user"""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     
@@ -209,10 +200,64 @@ def get_medication_count(user_id: int) -> int:
     return result[0] if result else 0
 
 
-# ==================== STATISTICS ====================
+
+def get_all_users_with_meds():
+    """
+    Get all users who have active medications.
+    Returns list of tuples: [(user_id, timezone), ...]
+    """
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    
+    c.execute('''
+        SELECT DISTINCT u.user_id, u.timezone
+        FROM users u
+        JOIN medications m ON u.user_id = m.user_id
+        WHERE m.active = 1
+        AND u.notifications_enabled = 1
+    ''')
+    
+    results = c.fetchall()
+    conn.close()
+    
+    return results
+
+
+def log_reminder_sent(medication_id: int, user_id: int) -> int:
+    """Log when we send a reminder"""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    
+    c.execute('''
+        INSERT INTO reminder_logs (medication_id, user_id)
+        VALUES (?, ?)
+    ''', (medication_id, user_id))
+    
+    log_id = c.lastrowid
+    conn.commit()
+    conn.close()
+    
+    return log_id
+
+
+def mark_reminder_acknowledged(log_id: int):
+    """Mark when user clicks 'Taken' button"""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    
+    c.execute('''
+        UPDATE reminder_logs 
+        SET acknowledged = 1 
+        WHERE id = ?
+    ''', (log_id,))
+    
+    conn.commit()
+    conn.close()
+
+
 
 def get_user_stats(user_id: int, days: int = 7) -> Dict:
-    '''Get user statistics for last N days'''
+    """Get user statistics for last N days"""
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     
