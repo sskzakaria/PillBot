@@ -96,18 +96,24 @@ def make_confirm_keyboard():
     return markup
 
 
-def make_edit_keyboard(medication_id: int):
-    '''Create keyboard for editing medication'''
+def make_edit_keyboard(medication_id: int, frequency: str = None):
     markup = InlineKeyboardMarkup(row_width=2)
     
     markup.add(
         InlineKeyboardButton("✏️ Name", callback_data=f"edit_name_{medication_id}"),
         InlineKeyboardButton("✏️ Dosage", callback_data=f"edit_dosage_{medication_id}")
     )
-    markup.add(
-        InlineKeyboardButton("✏️ Times", callback_data=f"edit_times_{medication_id}"),
-        InlineKeyboardButton("✏️ Days", callback_data=f"edit_days_{medication_id}")
-    )
+    
+    if frequency == 'weekly':
+        markup.add(
+            InlineKeyboardButton("✏️ Times", callback_data=f"edit_times_{medication_id}"),
+            InlineKeyboardButton("✏️ Days", callback_data=f"edit_days_{medication_id}")
+        )
+    else:
+        markup.add(
+            InlineKeyboardButton("✏️ Times", callback_data=f"edit_times_{medication_id}")
+        )
+    
     markup.add(
         InlineKeyboardButton("🗑️ Delete", callback_data=f"delete_{medication_id}")
     )
