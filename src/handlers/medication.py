@@ -1,4 +1,3 @@
-# src/handlers/medication.py
 
 from src.app import bot, user_data
 from src.utils.decorators import with_timezone, with_user
@@ -17,13 +16,8 @@ from src.config import MAX_MEDICATIONS_PER_USER
 from telebot.types import ReplyKeyboardRemove
 
 
-@bot.message_handler(commands=['addpill'])
-@with_user
-@with_timezone
-def medication_handler(message):
-    user_id = message.chat.id
-    
-    # check if user hit the limit
+def _start_add_medication(user_id):
+    from src.database.repository import get_medication_count
     med_count = get_medication_count(user_id)
     if med_count >= MAX_MEDICATIONS_PER_USER:
         bot.send_message(
@@ -32,18 +26,20 @@ def medication_handler(message):
             "Delete some using /list before adding more."
         )
         return
-    
-    # start the flow
     user_data[user_id] = {'step': 1, 'total_steps': 5}
-    
     text = (
         "💊 **Adding New Medication** (Step 1/5)\n\n"
         "What's the medication name?\n\n"
         "_Type /cancel anytime to cancel_"
     )
-    
     sent_msg = bot.send_message(user_id, text, parse_mode="Markdown")
     bot.register_next_step_handler(sent_msg, dosage_handler)
+
+@bot.message_handler(commands=['addpill'])
+@with_user
+@with_timezone
+def medication_handler(message):
+    _start_add_medication(message.chat.id)
 
 
 def dosage_handler(message):
@@ -268,6 +264,15 @@ def confirm_handler(message):
     user_id = message.chat.id
     data = user_data[user_id]
     
+    if data.get('editing') and data.get('edit_field') == 'times':
+        from src.handlers.list import _show_medication
+        from src.database.repository import update_medication
+        med_id = data['medication_id']
+        update_medication(med_id, times=data['times'])
+        del user_data[user_id]
+        bot.send_message(user_id, f"✅ Times updated to: {', '.join(data['times'])}")
+        _show_medication(user_id, med_id)
+        return
     # build display
     if data['frequency'] == 'weekly':
         days_str = ', '.join(data.get('days', []))
